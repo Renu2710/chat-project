@@ -1,0 +1,64 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  IMAGE_NAME: "renu1318/test"
+  DOCKER_HOST: "tcp://docker:2375"
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_BUILDKIT: "0"
+  
+
+build-job:                # Thi part is used for building which is continous integration (on-commit)
+  stage: build
+
+  image: docker:latest
+
+  services:
+    - name: docker:dind
+      alias: docker
+
+  tags:
+    - test
+
+  before_script:
+    - docker version
+    - docker info
+
+  script:
+    # Read version
+    - VERSION=$(cat version.txt)
+
+   
+    - echo "USERNAME = $USERNAME"
+    - echo "IMAGE    = $IMAGE_NAME:$VERSION"
+    
+
+    # Login
+    - echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin
+    - docker build -f Dockerfile -t $IMAGE_NAME:$VERSION .
+    - whoami
+    - echo "===== Pushing Image ====="
+    - docker push $IMAGE_NAME:$VERSION
+    
+deploy-job:           # This part is used to deploy which is continous deployment (On-commit)
+  stage: deploy
+
+  image: alpine:latest
+
+  tags:
+    - test
+
+  before_script:
+    - apk add --no-cache openssh
+    - mkdir -p ~/.ssh
+    - echo "$DEPLOY_KEY" > ~/.ssh/id_ed25519
+    - chmod 600 ~/.ssh/id_ed25519
+    - cat ~/.ssh/id_ed25519
+    - whoami
+
+  script:
+    - VERSION=$(cat version.txt)
+    - ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 renu@34.93.90.47 "sudo docker pull $IMAGE_NAME:$VERSION && cd /home/renu/chat && sudo docker compose down && sudo docker compose up -d "
+
+  
