@@ -136,3 +136,12 @@ The deployment process is as follows:
 8. The latest versioned image is pulled from Docker Hub.
 9. Docker Compose restarts the application with the updated image.
 10. The updated application is available through the VM's public IP address.
+
+## Live URL
+
+Access here : http://34.93.90.47/
+
+
+## Final Output
+
+![Application Screenshot](images/image.png)
